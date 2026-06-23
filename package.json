@@ -1,0 +1,17 @@
+{
+  "name": "velque-sdk",
+  "version": "0.1.0",
+  "description": "JavaScript client for Velque, the order book for tokenized stocks on Solana",
+  "type": "module",
+  "main": "index.mjs",
+  "exports": {
+    ".": "./index.mjs",
+    "./client": "./src/velque-client.mjs",
+    "./clearing": "./src/clearing.mjs"
+  },
+  "files": ["index.mjs", "src"],
+  "license": "MIT",
+  "dependencies": {
+    "@solana/web3.js": "^1.98.4"
+  }
+}
