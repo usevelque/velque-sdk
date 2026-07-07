@@ -50,3 +50,29 @@ export function findPrice(orders, reference, tick) {
   return { price, volume: best[0], imbalance: best[1] };
 }
 
+function fillGroup(orders, group, side, lot, state, fills) {
+  let total = 0n;
+  for (const i of group) if (orders[i].side === side) total += orders[i].qty;
+  if (total === 0n) return;
+  if (total <= state.remaining) {
+    for (const i of group) if (orders[i].side === side) fills[i] = orders[i].qty;
+    state.remaining -= total;
+    return;
+  }
+  const rem = state.remaining;
+  let given = 0n;
+  for (const i of group) {
+    if (orders[i].side !== side) continue;
+    const share = ((orders[i].qty * rem) / total / lot) * lot;
+    fills[i] = share;
+    given += share;
+  }
+  let left = rem - given;
+  const order = group.filter((i) => orders[i].side === side).sort((a, b) => a - b);
+  for (const i of order) {
+    if (left < lot) break;
+    if (fills[i] + lot <= orders[i].qty) { fills[i] += lot; left -= lot; }
+  }
+  state.remaining = 0n;
+}
+
