@@ -76,3 +76,28 @@ function fillGroup(orders, group, side, lot, state, fills) {
   state.remaining = 0n;
 }
 
+export function allocate(orders, price, volume, lot) {
+  const fills = orders.map(() => 0n);
+  if (volume === 0n) return fills;
+  const idx = sorted(orders);
+  let state = { remaining: volume };
+  for (let end = idx.length; end > 0 && state.remaining > 0n;) {
+    const p = orders[idx[end - 1]].price;
+    if (p < price) break;
+    let start = end;
+    while (start > 0 && orders[idx[start - 1]].price === p) start--;
+    fillGroup(orders, idx.slice(start, end), 'buy', lot, state, fills);
+    end = start;
+  }
+  state = { remaining: volume };
+  for (let start = 0; start < idx.length && state.remaining > 0n;) {
+    const p = orders[idx[start]].price;
+    if (p > price) break;
+    let end = start;
+    while (end < idx.length && orders[idx[end]].price === p) end++;
+    fillGroup(orders, idx.slice(start, end), 'sell', lot, state, fills);
+    start = end;
+  }
+  return fills;
+}
+
