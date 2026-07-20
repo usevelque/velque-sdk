@@ -29,3 +29,16 @@ export const ata = (owner, mint, prog = TOKEN) =>
 export const marketPda = (baseMint) => pda([Buffer.from('market'), baseMint.toBuffer()]);
 export const bookPda = (market, id) => pda([Buffer.from('book'), market.toBuffer(), u64(id)]);
 
+export const computeLimit = (units) => ComputeBudgetProgram.setComputeUnitLimit({ units });
+
+/** Accounts for one side: base for a sell, quote for a buy. */
+const legKeys = (mk, side, userAcc) => side === SELL
+  ? [w(userAcc), w(mk.vbase), ro(mk.baseMint), ro(mk.baseProg)]
+  : [w(userAcc), w(mk.vquote), ro(mk.quoteMint), ro(mk.quoteProg)];
+
+/** Both sides: base account, quote account, two vaults, two mints, two programs. */
+const bothKeys = (mk, baseAcc, quoteAcc) => [
+  w(baseAcc), w(quoteAcc), w(mk.vbase), w(mk.vquote),
+  ro(mk.baseMint), ro(mk.quoteMint), ro(mk.baseProg), ro(mk.quoteProg),
+];
+
