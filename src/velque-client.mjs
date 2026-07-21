@@ -42,3 +42,16 @@ const bothKeys = (mk, baseAcc, quoteAcc) => [
   ro(mk.baseMint), ro(mk.quoteMint), ro(mk.baseProg), ro(mk.quoteProg),
 ];
 
+export function initMarketIx({ authority, baseMint, quoteMint, baseProg = TOKEN, quoteProg = TOKEN, windowSecs, tick, lot, reference, maxAge, bandBps, minNotional }) {
+  const market = marketPda(baseMint);
+  return new TransactionInstruction({
+    programId: PROGRAM_ID,
+    keys: [
+      acc(authority, true, true), w(market), ro(baseMint), ro(quoteMint),
+      w(ata(market, baseMint, baseProg)), w(ata(market, quoteMint, quoteProg)),
+      ro(baseProg), ro(quoteProg), ro(ATA_PROGRAM), ro(SystemProgram.programId),
+    ],
+    data: Buffer.concat([Buffer.from([0]), u64(windowSecs), u64(tick), u64(lot), u64(reference), u64(maxAge), u64(bandBps), u64(minNotional)]),
+  });
+}
+
