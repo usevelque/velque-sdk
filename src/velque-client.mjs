@@ -55,3 +55,20 @@ export function initMarketIx({ authority, baseMint, quoteMint, baseProg = TOKEN,
   });
 }
 
+/** Order into the current window's auction (Dark only). */
+export function placeIx({ owner, mk, side, price, qty, src, tif = 0 }) {
+  return new TransactionInstruction({
+    programId: PROGRAM_ID,
+    keys: [acc(owner, true, true), ro(mk.address), w(bookPda(mk.address, mk.auctionId)), ...legKeys(mk, side, src), ro(SystemProgram.programId)],
+    data: Buffer.concat([Buffer.from([1, side]), u64(price), u64(qty), Buffer.from([tif])]),
+  });
+}
+
+export function cancelIx({ owner, mk, index, side, dest }) {
+  return new TransactionInstruction({
+    programId: PROGRAM_ID,
+    keys: [acc(owner, true, false), ro(mk.address), w(bookPda(mk.address, mk.auctionId)), ...legKeys(mk, side, dest)],
+    data: Buffer.concat([Buffer.from([2]), u16(index)]),
+  });
+}
+
