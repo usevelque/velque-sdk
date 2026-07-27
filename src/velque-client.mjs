@@ -72,3 +72,24 @@ export function cancelIx({ owner, mk, index, side, dest }) {
   });
 }
 
+/** Clear the window. During Day, if the window holds orders, this is the opening cross. */
+export function clearIx({ cranker, mk }) {
+  const m = mk.address;
+  return new TransactionInstruction({
+    programId: PROGRAM_ID,
+    keys: [
+      acc(cranker, true, true), w(m), w(bookPda(m, mk.auctionId)),
+      w(bookPda(m, BigInt(mk.auctionId) + 1n)), w(dayPda(m)), ro(SystemProgram.programId),
+    ],
+    data: Buffer.from([3]),
+  });
+}
+
+export function claimIx({ owner, mk, book, index, baseDest, quoteDest }) {
+  return new TransactionInstruction({
+    programId: PROGRAM_ID,
+    keys: [acc(owner, true, false), ro(mk.address), w(book), ...bothKeys(mk, baseDest, quoteDest)],
+    data: Buffer.concat([Buffer.from([4]), u16(index)]),
+  });
+}
+
