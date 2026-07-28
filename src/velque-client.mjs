@@ -93,3 +93,19 @@ export function claimIx({ owner, mk, book, index, baseDest, quoteDest }) {
   });
 }
 
+export function setReferenceIx({ authority, market, price }) {
+  return new TransactionInstruction({
+    programId: PROGRAM_ID,
+    keys: [acc(authority, true, false), w(market)],
+    data: Buffer.concat([Buffer.from([5]), u64(price)]),
+  });
+}
+
+export function closeBookIx({ book, payer }) {
+  return new TransactionInstruction({
+    programId: PROGRAM_ID,
+    keys: [w(book), w(payer)],
+    data: Buffer.from([6]),
+  });
+}
+
