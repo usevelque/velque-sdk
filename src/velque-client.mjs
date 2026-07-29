@@ -135,3 +135,26 @@ export async function readMarket(conn, market) {
   };
 }
 
+const STATUS = { 1: 'live', 2: 'cancelled', 3: 'claimed' };
+
+export async function readBook(conn, book) {
+  const a = await conn.getAccountInfo(book);
+  if (!a) return null;
+  const d = a.data;
+  const n = d.readUInt16LE(4);
+  const orders = [];
+  for (let i = 0; i < n; i++) {
+    const o = HEADER + i * ENTRY;
+    orders.push({
+      index: i, owner: key(d, o), price: rd(d, o + 32), qty: rd(d, o + 40), filled: rd(d, o + 48),
+      escrow: rd(d, o + 56), side: d[o + 64] === BUY ? 'buy' : 'sell', status: STATUS[d[o + 65]] ?? 'empty',
+      tif: d[o + 66] === 1 ? 'gtc' : 'one',
+    });
+  }
+  return {
+    address: book, cleared: d[2] === 1, auctionId: rd(d, 40), windowEnd: Number(d.readBigInt64LE(48)),
+    clearPrice: rd(d, 56), volume: rd(d, 64), imbalance: rd(d, 72), reference: rd(d, 80),
+    clearedAt: Number(d.readBigInt64LE(88)), payer: key(d, 96), orders,
+  };
+}
+
