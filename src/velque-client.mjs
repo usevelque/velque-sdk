@@ -109,3 +109,29 @@ export function closeBookIx({ book, payer }) {
   });
 }
 
+/** The book is fully settled and can be closed (see close_book in the program). */
+export const isSettled = (book) => book.cleared && book.orders.every((o) =>
+  o.status === 'cancelled' || o.status === 'claimed' || (o.status === 'live' && o.filled === 0n && o.escrow === 0n));
+
+/** 'day' while the reference is fresh, otherwise 'dark'. now is in unix seconds. */
+export const session = (mk, now) =>
+  mk.refAt > 0 && now >= mk.refAt && now - mk.refAt <= Number(mk.maxAge) ? 'day' : 'dark';
+
+const rd = (d, o) => d.readBigUInt64LE(o);
+const key = (d, o) => new PublicKey(d.subarray(o, o + 32));
+
+export async function readMarket(conn, market) {
+  const a = await conn.getAccountInfo(market);
+  if (!a) return null;
+  const d = a.data;
+  return {
+    address: market, baseDecimals: d[2], quoteDecimals: d[3], decimals: d[2],
+    authority: key(d, 8), baseMint: key(d, 40), quoteMint: key(d, 72), baseProg: key(d, 104), quoteProg: key(d, 136),
+    vbase: key(d, 168), vquote: key(d, 200),
+    windowSecs: rd(d, 232), tick: rd(d, 240), lot: rd(d, 248), auctionId: rd(d, 256),
+    windowStart: Number(d.readBigInt64LE(264)), windowEnd: Number(d.readBigInt64LE(272)),
+    reference: rd(d, 280), lastPrice: rd(d, 288), auctionsCleared: rd(d, 296),
+    refAt: Number(d.readBigInt64LE(304)), maxAge: rd(d, 312), bandBps: rd(d, 320), daySeq: rd(d, 328), minNotional: rd(d, 336),
+  };
+}
+
