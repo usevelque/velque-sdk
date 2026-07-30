@@ -101,3 +101,12 @@ export function allocate(orders, price, volume, lot) {
   return fills;
 }
 
+/** Recompute a cleared book and compare it with the program's record. */
+export function replay(book, market) {
+  // live at clearing time: everything except cancelled (claimed orders were live too)
+  const orders = book.orders.map((o) => ({ side: o.side, price: o.price, qty: o.qty, live: o.status !== 'cancelled' }));
+  const out = findPrice(orders, book.reference, market.tick);
+  const fills = allocate(orders, out.price, out.volume, market.lot);
+  const fillsMatch = fills.every((f, i) => f === book.orders[i].filled);
+  return { ...out, fills, ok: out.price === book.clearPrice && out.volume === book.volume && fillsMatch };
+}
