@@ -158,3 +158,28 @@ export async function readBook(conn, book) {
   };
 }
 
+// ---------------------------------------------------------------- Nasdaq hours
+// Regular session 9:30 to 16:00 New York time, weekdays, excluding exchange holidays.
+// The keeper updates the reference only during these hours; once it stops, the
+// reference goes stale and the on-chain market falls into Dark by itself.
+const HOLIDAYS = new Set([
+  '2026-11-26', '2026-12-25',
+  '2027-01-01', '2027-01-18', '2027-02-15', '2027-03-26', '2027-05-31', '2027-06-18',
+  '2027-07-05', '2027-09-06', '2027-11-25', '2027-12-24',
+]);
+const NY = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', weekday: 'short', hourCycle: 'h23',
+});
+
+function nyParts(sec) {
+  const p = Object.fromEntries(NY.formatToParts(new Date(sec * 1000)).map((x) => [x.type, x.value]));
+  return { date: `${p.year}-${p.month}-${p.day}`, weekday: p.weekday, minutes: Number(p.hour) * 60 + Number(p.minute) };
+}
+
+export function nasdaqOpen(sec) {
+  const p = nyParts(sec);
+  if (p.weekday === 'Sat' || p.weekday === 'Sun' || HOLIDAYS.has(p.date)) return false;
+  return p.minutes >= 570 && p.minutes < 960;
+}
+
