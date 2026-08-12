@@ -183,3 +183,12 @@ export function nasdaqOpen(sec) {
   return p.minutes >= 570 && p.minutes < 960;
 }
 
+/** Next Nasdaq session change (open or close), unix seconds. */
+export function nextNasdaqChange(sec) {
+  const now = nasdaqOpen(sec);
+  // the 9:30 and 16:00 boundaries lie on a 15-minute grid
+  let t = Math.ceil((sec + 1) / 900) * 900;
+  for (let i = 0; i < 4 * 24 * 6; i++, t += 900) if (nasdaqOpen(t) !== now) return t;
+  return null;
+}
+
