@@ -25,3 +25,21 @@ async function getJson(url, ms = 6000) {
   }
 }
 
+/** Nasdaq: last trade of the regular session. */
+export async function nasdaqLast(symbol) {
+  const j = await getJson(`https://api.nasdaq.com/api/quote/${symbol}/info?assetclass=stocks`);
+  const p = j?.data?.primaryData;
+  if (!p?.lastSalePrice) throw new Error('nasdaq: no price');
+  const price = Number(String(p.lastSalePrice).replace(/[$,]/g, ''));
+  // "Sep 30, 2026 10:13 AM ET" -> unix; the time is New York local
+  const m = String(p.lastTradeTimestamp || '').match(/([A-Za-z]{3}) (\d+), (\d{4}) (\d+):(\d+) (AM|PM)/);
+  let at = null;
+  if (m) {
+    const mon = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].indexOf(m[1]);
+    let h = Number(m[4]) % 12 + (m[6] === 'PM' ? 12 : 0);
+    const guess = Date.UTC(+m[3], mon, +m[2], h, +m[5]) / 1000;
+    at = guess + nyOffsetMin(guess) * -60; // NY local -> UTC
+  }
+  return { source: 'nasdaq', price, at };
+}
+

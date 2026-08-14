@@ -7,7 +7,8 @@
   "exports": {
     ".": "./index.mjs",
     "./client": "./src/velque-client.mjs",
-    "./clearing": "./src/clearing.mjs"
+    "./clearing": "./src/clearing.mjs",
+    "./reference": "./src/reference.mjs"
   },
   "files": ["index.mjs", "src"],
   "license": "MIT",
