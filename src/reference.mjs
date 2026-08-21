@@ -43,3 +43,11 @@ export async function nasdaqLast(symbol) {
   return { source: 'nasdaq', price, at };
 }
 
+/** Yahoo Finance: price and time of the last regular-session trade. */
+export async function yahooLast(symbol) {
+  const j = await getJson(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1m&range=1d`);
+  const m = j?.chart?.result?.[0]?.meta;
+  if (!m?.regularMarketPrice) throw new Error('yahoo: no price');
+  return { source: 'yahoo', price: Number(m.regularMarketPrice), at: Number(m.regularMarketTime) };
+}
+
