@@ -51,3 +51,16 @@ export async function yahooLast(symbol) {
   return { source: 'yahoo', price: Number(m.regularMarketPrice), at: Number(m.regularMarketTime) };
 }
 
+/** Token price on Jupiter (used as a cross-check). */
+export async function jupiterPrice(mint) {
+  const j = await getJson(`https://lite-api.jup.ag/tokens/v2/search?query=${mint}`);
+  const t = j.find((x) => x.id === mint);
+  return t?.usdPrice ? Number(t.usdPrice) : null;
+}
+
+function nyOffsetMin(sec) {
+  const f = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  const o = Object.fromEntries(f.formatToParts(new Date(sec * 1000)).map((x) => [x.type, x.value]));
+  return Math.round((Date.UTC(+o.year, +o.month - 1, +o.day, +o.hour, +o.minute) - Math.floor(sec / 60) * 60000) / 60000);
+}
+
