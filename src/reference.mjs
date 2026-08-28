@@ -64,3 +64,34 @@ function nyOffsetMin(sec) {
   return Math.round((Date.UTC(+o.year, +o.month - 1, +o.day, +o.hour, +o.minute) - Math.floor(sec / 60) * 60000) / 60000);
 }
 
+/**
+ * Token reference price in quote units (micro-USDC per whole token), a multiple of tick.
+ * Returns { price, share, multiplier, sources, reason } or { price: null, reason }.
+ */
+export async function nasdaqReference({ symbol, tick, multiplier = 1, jupiterMint, nowSec = Math.floor(Date.now() / 1000) }) {
+  const got = await Promise.allSettled([nasdaqLast(symbol), yahooLast(symbol)]);
+  const fresh = got.filter((g) => g.status === 'fulfilled').map((g) => g.value)
+    .filter((q) => q.price > 0 && (q.at == null || nowSec - q.at <= MAX_AGE_S));
+  const errors = got.filter((g) => g.status === 'rejected').map((g) => String(g.reason?.message || g.reason));
+  let share = null;
+  if (fresh.length >= 2) {
+    const [a, b] = fresh;
+    if ((Math.abs(a.price - b.price) / Math.min(a.price, b.price)) * 10_000 > AGREE_BPS) {
+      return { price: null, reason: `sources disagree: ${a.source} ${a.price} vs ${b.source} ${b.price}` };
+    }
+    share = (a.price + b.price) / 2;
+  } else if (fresh.length === 1) {
+    const jup = jupiterMint ? await jupiterPrice(jupiterMint).catch(() => null) : null;
+    const tokenGuess = fresh[0].price * multiplier;
+    if (!jup || (Math.abs(jup - tokenGuess) / tokenGuess) * 10_000 > JUP_BPS) {
+      return { price: null, reason: `one source (${fresh[0].source}) and no Jupiter confirmation` };
+    }
+    share = fresh[0].price;
+  } else {
+    return { price: null, reason: `no fresh source${errors.length ? ': ' + errors.join('; ') : ''}` };
+  }
+  const token = share * multiplier;
+  const t = BigInt(tick);
+  const price = (BigInt(Math.round(token * 1e6)) / t) * t;
+  return { price, share, multiplier, sources: fresh.map((q) => `${q.source} ${q.price}`) };
+}
