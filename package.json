@@ -1,6 +1,6 @@
 {
   "name": "velque-sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "JavaScript client for Velque, the order book for tokenized stocks on Solana",
   "type": "module",
   "main": "index.mjs",

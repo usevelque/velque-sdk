@@ -192,3 +192,29 @@ export function nextNasdaqChange(sec) {
   return null;
 }
 
+// ---------------------------------------------------------------- ScaledUiAmount multiplier
+// xStocks on Token-2022 carry the ScaledUiAmount extension: dividends and splits
+// change the multiplier, not the balances. One token unit = multiplier shares, so
+// token price = Nasdaq share price x multiplier.
+const EXT_SCALED_UI = 25;
+
+/** Effective multiplier from the mint data (1 if the extension is absent). */
+export function scaledMultiplier(mintData, nowSec) {
+  const d = mintData;
+  if (!d || d.length <= 166) return 1;
+  let o = 166;
+  while (o + 4 <= d.length) {
+    const t = d.readUInt16LE(o);
+    const l = d.readUInt16LE(o + 2);
+    if (t === 0 && l === 0) break;
+    if (t === EXT_SCALED_UI) {
+      const b = o + 4;
+      const cur = d.readDoubleLE(b + 32);
+      const at = Number(d.readBigInt64LE(b + 40));
+      const next = d.readDoubleLE(b + 48);
+      return at > 0 && nowSec >= at ? next : cur;
+    }
+    o += 4 + l;
+  }
+  return 1;
+}
