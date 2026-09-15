@@ -14,8 +14,12 @@ export const TIF_ONE = 0;
 export const TIF_GTC = 1;
 export const ENTRY = 80;
 export const HEADER = 128;
+export const DAY_HEADER = 72;
+export const DAY_ENTRY = 80;
+export const DAY_CAP = 64;
 export const MARKET_TAG = 7;
 export const BOOK_TAG = 7;
+export const DAY_TAG = 8;
 
 const u64 = (v) => { const b = Buffer.alloc(8); b.writeBigUInt64LE(BigInt(v)); return b; };
 const u16 = (v) => { const b = Buffer.alloc(2); b.writeUInt16LE(v); return b; };
@@ -28,6 +32,7 @@ export const ata = (owner, mint, prog = TOKEN) =>
   PublicKey.findProgramAddressSync([owner.toBuffer(), prog.toBuffer(), mint.toBuffer()], ATA_PROGRAM)[0];
 export const marketPda = (baseMint) => pda([Buffer.from('market'), baseMint.toBuffer()]);
 export const bookPda = (market, id) => pda([Buffer.from('book'), market.toBuffer(), u64(id)]);
+export const dayPda = (market) => pda([Buffer.from('day'), market.toBuffer()]);
 
 export const computeLimit = (units) => ComputeBudgetProgram.setComputeUnitLimit({ units });
 
@@ -108,6 +113,25 @@ export function closeBookIx({ book, payer }) {
     data: Buffer.from([6]),
   });
 }
+
+/** Order into the day book (Day only): matched immediately, the remainder rests. */
+export function placeDayIx({ owner, mk, side, price, qty, baseAcc, quoteAcc }) {
+  return new TransactionInstruction({
+    programId: PROGRAM_ID,
+    keys: [acc(owner, true, true), w(mk.address), w(dayPda(mk.address)), ...bothKeys(mk, baseAcc, quoteAcc), ro(SystemProgram.programId)],
+    data: Buffer.concat([Buffer.from([7, side]), u64(price), u64(qty)]),
+  });
+}
+
+const dayExit = (tag) => ({ owner, mk, index, baseAcc, quoteAcc }) => new TransactionInstruction({
+  programId: PROGRAM_ID,
+  keys: [acc(owner, true, false), ro(mk.address), w(dayPda(mk.address)), ...bothKeys(mk, baseAcc, quoteAcc)],
+  data: Buffer.concat([Buffer.from([tag]), u16(index)]),
+});
+/** Cancel a day order: returns the remainder and the proceeds. */
+export const cancelDayIx = dayExit(8);
+/** Claim the proceeds; an order that is fully filled or was moved to the auction frees its slot. */
+export const claimDayIx = dayExit(9);
 
 /** The book is fully settled and can be closed (see close_book in the program). */
 export const isSettled = (book) => book.cleared && book.orders.every((o) =>
