@@ -133,6 +133,16 @@ export const cancelDayIx = dayExit(8);
 /** Claim the proceeds; an order that is fully filled or was moved to the auction frees its slot. */
 export const claimDayIx = dayExit(9);
 
+/** In Dark, move live day orders into the current auction. */
+export function closeDayIx({ cranker, mk }) {
+  const m = mk.address;
+  return new TransactionInstruction({
+    programId: PROGRAM_ID,
+    keys: [acc(cranker, true, true), ro(m), w(dayPda(m)), w(bookPda(m, mk.auctionId)), ro(SystemProgram.programId)],
+    data: Buffer.from([10]),
+  });
+}
+
 /** The book is fully settled and can be closed (see close_book in the program). */
 export const isSettled = (book) => book.cleared && book.orders.every((o) =>
   o.status === 'cancelled' || o.status === 'claimed' || (o.status === 'live' && o.filled === 0n && o.escrow === 0n));
