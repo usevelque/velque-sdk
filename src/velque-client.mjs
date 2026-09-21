@@ -192,6 +192,30 @@ export async function readBook(conn, book) {
   };
 }
 
+const DSTATUS = { 1: 'live', 2: 'moved' };
+
+/** Day book: occupied slots, bids by descending price, asks by ascending price. */
+export async function readDay(conn, market) {
+  const address = dayPda(market);
+  const a = await conn.getAccountInfo(address);
+  if (!a) return { address, slots: [], bids: [], asks: [] };
+  const d = a.data;
+  const slots = [];
+  for (let i = 0; i < DAY_CAP; i++) {
+    const o = DAY_HEADER + i * DAY_ENTRY;
+    const status = DSTATUS[d[o + 73]];
+    if (!status) continue;
+    slots.push({
+      index: i, owner: key(d, o), price: rd(d, o + 32), qty: rd(d, o + 40), escrow: rd(d, o + 48),
+      owed: rd(d, o + 56), seq: rd(d, o + 64), side: d[o + 72] === BUY ? 'buy' : 'sell', status,
+    });
+  }
+  const live = slots.filter((s) => s.status === 'live' && s.qty > 0n);
+  const bids = live.filter((s) => s.side === 'buy').sort((x, y) => (x.price === y.price ? Number(x.seq - y.seq) : x.price > y.price ? -1 : 1));
+  const asks = live.filter((s) => s.side === 'sell').sort((x, y) => (x.price === y.price ? Number(x.seq - y.seq) : x.price < y.price ? -1 : 1));
+  return { address, slots, bids, asks };
+}
+
 // ---------------------------------------------------------------- Nasdaq hours
 // Regular session 9:30 to 16:00 New York time, weekdays, excluding exchange holidays.
 // The keeper updates the reference only during these hours; once it stops, the
