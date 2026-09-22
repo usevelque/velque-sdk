@@ -35,3 +35,25 @@ const book = await readBook(conn, bookPda(market, mk.auctionId)); // current auc
 const day = await readDay(conn, market);                          // { bids, asks, slots }
 ```
 
+## Place an order
+
+Every builder takes the market snapshot from `readMarket`, so the same call works for SPL Token and Token-2022 mints.
+
+```js
+import { Transaction } from '@solana/web3.js';
+import { placeDayIx, placeIx, ata, BUY, TIF_GTC, computeLimit } from 'velque-sdk';
+
+const baseAcc = ata(wallet.publicKey, mk.baseMint, mk.baseProg);
+const quoteAcc = ata(wallet.publicKey, mk.quoteMint, mk.quoteProg);
+
+// Day: matches at once at resting prices, the rest waits in the book
+const dayOrder = placeDayIx({ owner: wallet.publicKey, mk, side: BUY, price: 230_500_000n, qty: 100_000_000n, baseAcc, quoteAcc });
+
+// Dark: waits in the current window and clears with everyone else at one price
+const nightOrder = placeIx({ owner: wallet.publicKey, mk, side: BUY, price: 230_500_000n, qty: 100_000_000n, src: quoteAcc, tif: TIF_GTC });
+
+const tx = new Transaction().add(computeLimit(300_000), session(mk, now) === 'day' ? dayOrder : nightOrder);
+```
+
+Prices are quote units per whole base token (USDC has 6 decimals, so `230_500_000n` is $230.50). Quantities are base units (xStocks have 8 decimals, so `100_000_000n` is one token).
+
