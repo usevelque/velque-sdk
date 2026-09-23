@@ -57,3 +57,17 @@ const tx = new Transaction().add(computeLimit(300_000), session(mk, now) === 'da
 
 Prices are quote units per whole base token (USDC has 6 decimals, so `230_500_000n` is $230.50). Quantities are base units (xStocks have 8 decimals, so `100_000_000n` is one token).
 
+## Replay an auction
+
+```js
+import { readBook, readMarket, bookPda, replay } from 'velque-sdk';
+
+const book = await readBook(conn, bookPda(market, 4n));
+const result = replay(book, await readMarket(conn, market));
+
+console.log(result.ok);               // true if price, volume and every fill match the chain
+console.log(result.price, result.volume, result.fills);
+```
+
+`replay` uses only the orders and the reference stored in the book. See [auction-replay](https://github.com/usevelque/auction-replay) for a command-line version.
+
