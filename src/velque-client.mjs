@@ -1,5 +1,5 @@
 // Velque program client: builds instructions and reads accounts.
-// The byte layout is defined in program/src/state.rs; the offsets here match it (v3).
+// The byte layout is defined in program/src/state.rs; the offsets here match it (v3.1).
 // Instructions that need the mints, token programs and vaults take the market
 // snapshot `mk` from readMarket, so Token and Token-2022 are handled the same way.
 import { PublicKey, TransactionInstruction, SystemProgram, ComputeBudgetProgram } from '@solana/web3.js';
@@ -17,7 +17,7 @@ export const HEADER = 128;
 export const DAY_HEADER = 72;
 export const DAY_ENTRY = 80;
 export const DAY_CAP = 64;
-export const MARKET_TAG = 7;
+export const MARKET_TAG = 9;
 export const BOOK_TAG = 7;
 export const DAY_TAG = 8;
 
@@ -95,6 +95,15 @@ export function claimIx({ owner, mk, book, index, baseDest, quoteDest }) {
     programId: PROGRAM_ID,
     keys: [acc(owner, true, false), ro(mk.address), w(book), ...bothKeys(mk, baseDest, quoteDest)],
     data: Buffer.concat([Buffer.from([4]), u16(index)]),
+  });
+}
+
+/** Hand the oracle role to another key. Signed by the current one. */
+export function setAuthorityIx({ authority, market, newAuthority }) {
+  return new TransactionInstruction({
+    programId: PROGRAM_ID,
+    keys: [acc(authority, true, false), w(market)],
+    data: Buffer.concat([Buffer.from([11]), newAuthority.toBuffer()]),
   });
 }
 
