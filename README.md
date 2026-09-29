@@ -71,3 +71,17 @@ console.log(result.price, result.volume, result.fills);
 
 `replay` uses only the orders and the reference stored in the book. See [auction-replay](https://github.com/usevelque/auction-replay) for a command-line version.
 
+## Reference price
+
+```js
+import { nasdaqReference, scaledMultiplier } from 'velque-sdk';
+
+const mint = await conn.getAccountInfo(mk.baseMint);
+const multiplier = scaledMultiplier(mint.data, now);   // xStocks pay dividends through this multiplier
+
+const ref = await nasdaqReference({ symbol: 'NVDA', tick: mk.tick, multiplier });
+// { price, share, multiplier, sources } or { price: null, reason }
+```
+
+Two sources (api.nasdaq.com and Yahoo Finance) have to be fresh and agree within 0.5%. If only one answers, it is accepted only when the token price on Jupiter confirms it. Otherwise no price is returned and the market stays Dark.
+
