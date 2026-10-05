@@ -1,6 +1,6 @@
 # velque-sdk
 
-JavaScript client for Velque, the order book for tokenized stocks on Solana.
+JavaScript client for [Velque](https://usevelque.xyz), the order book for tokenized stocks on Solana.
 
 It has three parts, each usable on its own:
 
@@ -85,3 +85,11 @@ const ref = await nasdaqReference({ symbol: 'NVDA', tick: mk.tick, multiplier })
 
 Two sources (api.nasdaq.com and Yahoo Finance) have to be fresh and agree within 0.5%. If only one answers, it is accepted only when the token price on Jupiter confirms it. Otherwise no price is returned and the market stays Dark.
 
+## Related
+
+- [velque-program](https://github.com/usevelque/velque-program): the on-chain program
+- [velque-keeper](https://github.com/usevelque/velque-keeper): the service that posts the reference and clears windows
+
+## License
+
+MIT

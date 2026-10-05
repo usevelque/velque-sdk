@@ -12,6 +12,7 @@
   },
   "files": ["index.mjs", "src"],
   "license": "MIT",
+  "homepage": "https://usevelque.xyz",
   "dependencies": {
     "@solana/web3.js": "^1.99.0"
   }
