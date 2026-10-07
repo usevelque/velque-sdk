@@ -1,5 +1,9 @@
 # velque-sdk
 
+[![release](https://img.shields.io/github/v/release/usevelque/velque-sdk?color=f58aae&style=flat-square&labelColor=2a1228)](https://github.com/usevelque/velque-sdk/releases)
+[![auction replay](https://img.shields.io/github/actions/workflow/status/usevelque/market-log/snapshot.yml?branch=main&label=auction%20replay&style=flat-square&labelColor=2a1228)](https://github.com/usevelque/market-log/actions/workflows/snapshot.yml)
+[![license](https://img.shields.io/badge/license-MIT-f58aae?style=flat-square&labelColor=2a1228)](LICENSE)
+
 JavaScript client for [Velque](https://usevelque.xyz), the order book for tokenized stocks on Solana.
 
 It has three parts, each usable on its own:
@@ -9,6 +13,13 @@ It has three parts, each usable on its own:
 | `velque-sdk/client` | Instruction builders for every program instruction, account decoders, session and Nasdaq clock helpers |
 | `velque-sdk/clearing` | The auction clearing rule, ported line for line from the on-chain program |
 | `velque-sdk/reference` | The oracle reference price: Nasdaq last trade times the token's dividend multiplier |
+
+<a href="https://usevelque.xyz/app">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/usevelque/usevelque/output/board-dark.svg">
+    <img src="https://raw.githubusercontent.com/usevelque/usevelque/output/board-light.svg" alt="The Velque test market right now, read from Solana devnet" width="100%">
+  </picture>
+</a>
 
 ## Install
 
